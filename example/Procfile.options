@@ -1,0 +1,3 @@
+processes:
+    web:
+        stop_signal: TERM

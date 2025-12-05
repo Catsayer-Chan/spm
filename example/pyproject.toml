@@ -1,0 +1,9 @@
+[project]
+name = "example"
+version = "0.1.0"
+description = "A web example with tornado"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "tornado>=6.5.2",
+]
