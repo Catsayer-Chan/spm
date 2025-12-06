@@ -4,7 +4,7 @@ import (
 	"os"
 	"regexp"
 
-	"go.yaml.in/yaml/v4"
+	"github.com/goccy/go-yaml"
 )
 
 type ProcfileConfig map[string]string
@@ -25,6 +25,7 @@ func LoadProcfile(name string) (*ProcfileConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	err = yaml.Unmarshal(data, pfile)
 	if err != nil {
 		return nil, err

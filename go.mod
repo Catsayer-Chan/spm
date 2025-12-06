@@ -3,12 +3,12 @@ module spm
 go 1.24.10
 
 require (
-	github.com/gnuos/daemon v0.0.0-20251128080206-b7ffffcb7b55
+	github.com/gnuos/daemon v0.2.0
+	github.com/goccy/go-yaml v1.19.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/ugorji/go/codec v1.3.1
 	go.uber.org/zap v1.27.1
-	go.yaml.in/yaml/v4 v4.0.0-rc.3
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
