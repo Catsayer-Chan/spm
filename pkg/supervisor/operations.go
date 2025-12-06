@@ -46,6 +46,46 @@ func (sv *Supervisor) Status(name string) *Process {
 	return p
 }
 
+// forEachProcess 对指定范围的进程执行操作
+//
+// 参数：
+//
+//	appName: 项目名称，"*" 表示所有项目
+//	operation: 对单个进程执行的操作函数
+//
+// 返回：
+//
+//	[]*Process: 操作成功的进程列表
+//
+// 说明：
+//
+//	提取公共的进程迭代逻辑，避免代码重复
+func (sv *Supervisor) forEachProcess(appName string, operation func(string) *Process) []*Process {
+	procs := make([]*Process, 0)
+
+	if appName != "*" {
+		proj := sv.projectTable.Get(appName)
+		if proj == nil {
+			return procs
+		}
+
+		for _, name := range proj.GetProcNames() {
+			fullName := fmt.Sprintf("%s::%s", appName, name)
+			if p := operation(fullName); p != nil {
+				procs = append(procs, p)
+			}
+		}
+	} else {
+		for name := range sv.procTable.Iter() {
+			if p := operation(name); p != nil {
+				procs = append(procs, p)
+			}
+		}
+	}
+
+	return procs
+}
+
 // StatusAll 获取项目下所有进程的状态
 //
 // 参数：
@@ -60,32 +100,8 @@ func (sv *Supervisor) Status(name string) *Process {
 //
 //	procs := sv.StatusAll("myapp")
 //	procs := sv.StatusAll("*")  // 所有进程
-func (sv *Supervisor) StatusAll(appName string) (procs []*Process) {
-	procs = make([]*Process, 0)
-	var proj *Project
-	if appName != "*" {
-		proj = sv.projectTable.Get(appName)
-		if proj == nil {
-			return
-		}
-
-		plist := proj.GetProcNames()
-		for _, name := range plist {
-			fullName := fmt.Sprintf("%s::%s", appName, name)
-			p := sv.Status(fullName)
-			if p != nil {
-				procs = append(procs, p)
-			}
-		}
-	} else {
-		pt := sv.procTable.Iter()
-		for name := range pt {
-			p := sv.Status(name)
-			procs = append(procs, p)
-		}
-	}
-
-	return
+func (sv *Supervisor) StatusAll(appName string) []*Process {
+	return sv.forEachProcess(appName, sv.Status)
 }
 
 // Start 启动单个进程
@@ -151,33 +167,8 @@ func (sv *Supervisor) Start(name string) *Process {
 //
 //	procs := sv.StartAll("myapp")
 //	fmt.Printf("启动了 %d 个进程\n", len(procs))
-func (sv *Supervisor) StartAll(appName string) (procs []*Process) {
-	procs = make([]*Process, 0)
-
-	var proj *Project
-	if appName != "*" {
-		proj = sv.projectTable.Get(appName)
-		if proj == nil {
-			return
-		}
-
-		plist := proj.GetProcNames()
-		for _, name := range plist {
-			fullName := fmt.Sprintf("%s::%s", appName, name)
-			p := sv.Start(fullName)
-			if p != nil {
-				procs = append(procs, p)
-			}
-		}
-	} else {
-		pt := sv.procTable.Iter()
-		for name := range pt {
-			p := sv.Start(name)
-			procs = append(procs, p)
-		}
-	}
-
-	return
+func (sv *Supervisor) StartAll(appName string) []*Process {
+	return sv.forEachProcess(appName, sv.Start)
 }
 
 // Stop 停止单个进程
@@ -238,39 +229,33 @@ func (sv *Supervisor) Stop(name string) *Process {
 //
 //	[]*Process: 已停止的进程列表
 //
+// 注意事项：
+//
+//	对于特定项目，只停止当前运行中的进程
+//
 // 示例：
 //
 //	procs := sv.StopAll("myapp")
 //	fmt.Printf("停止了 %d 个进程\n", len(procs))
-func (sv *Supervisor) StopAll(appName string) (procs []*Process) {
-	procs = make([]*Process, 0)
-
-	var proj *Project
+func (sv *Supervisor) StopAll(appName string) []*Process {
+	// 对于特定项目，需要检查进程状态，只停止运行中的进程
 	if appName != "*" {
-		proj = sv.projectTable.Get(appName)
+		proj := sv.projectTable.Get(appName)
 		if proj == nil {
-			return
+			return make([]*Process, 0)
 		}
 
-		plist := proj.GetProcNames()
-		for _, name := range plist {
+		return sv.forEachProcess(appName, func(fullName string) *Process {
+			name := strings.Split(fullName, "::")[1]
 			if proj.GetState(name) {
-				fullName := fmt.Sprintf("%s::%s", appName, name)
-				p := sv.Stop(fullName)
-				if p != nil {
-					procs = append(procs, p)
-				}
+				return sv.Stop(fullName)
 			}
-		}
-	} else {
-		pt := sv.procTable.Iter()
-		for name := range pt {
-			p := sv.Stop(name)
-			procs = append(procs, p)
-		}
+			return nil
+		})
 	}
 
-	return
+	// 对于所有项目，直接调用 Stop
+	return sv.forEachProcess(appName, sv.Stop)
 }
 
 // Restart 重启单个进程
