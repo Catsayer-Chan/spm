@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -21,42 +20,28 @@ var startCmd = &cobra.Command{
 func init() {
 	startCmd.PersistentFlags().BoolVarP(&config.ForegroundFlag, "foregroud", "f", false, "Run the supervisor in the foreground")
 
-	startCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		rootCmd.PersistentPreRun(cmd, args)
-		execStartPersistentPreRun()
-	}
+	// start命令特殊处理：尝试启动daemon而不是要求daemon已运行
+	setupCommandPreRun(startCmd, func() {
+		if !config.ForegroundFlag {
+			if isDaemonRunning() {
+				return
+			}
+
+			if err := tryRunDaemon(); err != nil {
+				log.Fatal(err)
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+	})
 
 	rootCmd.AddCommand(startCmd)
 }
 
-func execStartPersistentPreRun() {
-	if !config.ForegroundFlag {
-		if isDaemonRunning() {
-			return
-		}
-
-		if err := tryRunDaemon(); err != nil {
-			log.Fatal(err)
-		}
-
-		time.Sleep(1 * time.Second)
-	}
-}
-
 func execStartCmd(cmd *cobra.Command, args []string) {
 	sendStartCmd := func(args []string) {
-		var procs string
-
-		if len(args) == 0 {
-			procs = "*"
-		} else if len(args) == 1 {
-			procs = args[0]
-		} else {
-			procs = strings.Join(args, ";")
-		}
-
 		msg.Action = supervisor.ActionStart
-		msg.Processes = procs
+		msg.Processes = parseProcessArgs(args, ";")
 
 		res := supervisor.ClientRun(msg)
 		if res == nil {

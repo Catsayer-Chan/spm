@@ -9,6 +9,8 @@ import (
 
 	"spm/pkg/utils"
 	"spm/pkg/utils/constants"
+
+	"github.com/spf13/cobra"
 )
 
 func isDaemonRunning() bool {
@@ -97,5 +99,32 @@ func parseProcessArgs(args []string, separator string) string {
 func requireDaemonRunning() {
 	if !isDaemonRunning() {
 		log.Fatalln("ERROR: Supervisor has not started. Please check supervisor daemon.")
+	}
+}
+
+// setupCommandPreRun 为命令设置标准的PersistentPreRun
+//
+// 参数：
+//
+//	cmd: cobra命令实例
+//	preRunFn: 可选的预运行函数，如果为nil则默认调用requireDaemonRunning
+//
+// 功能：
+//
+//	1. 调用rootCmd的PersistentPreRun（初始化配置和日志）
+//	2. 执行自定义的预运行逻辑
+//
+// 使用示例：
+//
+//	func init() {
+//	    setupCommandPreRun(stopCmd, requireDaemonRunning)
+//	    rootCmd.AddCommand(stopCmd)
+//	}
+func setupCommandPreRun(cmd *cobra.Command, preRunFn func()) {
+	cmd.PersistentPreRun = func(c *cobra.Command, args []string) {
+		rootCmd.PersistentPreRun(c, args)
+		if preRunFn != nil {
+			preRunFn()
+		}
 	}
 }

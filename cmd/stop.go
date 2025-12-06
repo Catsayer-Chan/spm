@@ -16,16 +16,8 @@ var stopCmd = &cobra.Command{
 }
 
 func init() {
-	stopCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		rootCmd.PersistentPreRun(cmd, args)
-		execStopPersistentPreRun()
-	}
-
+	setupCommandPreRun(stopCmd, requireDaemonRunning)
 	rootCmd.AddCommand(stopCmd)
-}
-
-func execStopPersistentPreRun() {
-	requireDaemonRunning()
 }
 
 func execStopCmd(cmd *cobra.Command, args []string) {

@@ -19,15 +19,8 @@ var shutdownCmd = &cobra.Command{
 }
 
 func init() {
-	shutdownCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		rootCmd.PersistentPreRun(cmd, args)
-		execShutdownPersistentPreRun()
-	}
+	setupCommandPreRun(shutdownCmd, requireDaemonRunning)
 	rootCmd.AddCommand(shutdownCmd)
-}
-
-func execShutdownPersistentPreRun() {
-	requireDaemonRunning()
 }
 
 func execShutdownCmd(cmd *cobra.Command, args []string) {

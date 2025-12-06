@@ -15,16 +15,8 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	statusCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		rootCmd.PersistentPreRun(cmd, args)
-		execStatusPersistentPreRun()
-	}
-
+	setupCommandPreRun(statusCmd, requireDaemonRunning)
 	rootCmd.AddCommand(statusCmd)
-}
-
-func execStatusPersistentPreRun() {
-	requireDaemonRunning()
 }
 
 func execStatusCmd(cmd *cobra.Command, args []string) {
