@@ -31,8 +31,13 @@ import (
 //
 // 创建时间: 2025-12-06
 func (sv *Supervisor) Status(name string) *Process {
-	sv.mu.RLock()
-	defer sv.mu.RUnlock()
+	sv.mu.Lock()
+	defer sv.mu.Unlock()
+
+	p := sv.procTable.Get(name)
+	if p == nil {
+		return notFoundProc
+	}
 
 	return sv.procTable.Get(name)
 }
@@ -121,7 +126,7 @@ func (sv *Supervisor) Start(name string) *Process {
 
 	p := sv.procTable.Get(name)
 	if p == nil {
-		return nil
+		return notFoundProc
 	}
 
 	appName := strings.Split(name, "::")[0]
@@ -131,7 +136,16 @@ func (sv *Supervisor) Start(name string) *Process {
 		p.logger.Warnf("%s already running with PID %d", p.FullName, p.Pid)
 
 		proj.SetState(p.Name, true)
-		return p
+
+		// 对于重复执行Start的进程，不修改进程表的情况下，返回进程状态信息
+		// 结构对齐ProcInfo
+		return &Process{
+			Pid:      p.Pid,
+			FullName: p.FullName,
+			StartAt:  p.StartAt,
+			StopAt:   p.StopAt,
+			State:    processStarted,
+		}
 	}
 
 	state := p.Start()
@@ -140,7 +154,13 @@ func (sv *Supervisor) Start(name string) *Process {
 	if state {
 		return p
 	} else {
-		return nil
+		return &Process{
+			Pid:      p.Pid,
+			FullName: p.FullName,
+			StartAt:  p.StartAt,
+			StopAt:   p.StopAt,
+			State:    processFailed,
+		}
 	}
 }
 
@@ -188,11 +208,18 @@ func (sv *Supervisor) Stop(name string) *Process {
 
 	p := sv.procTable.Get(name)
 	if p == nil {
-		return nil
+		return notFoundProc
 	}
 
 	appName := strings.Split(name, "::")[0]
 	proj := sv.projectTable.Get(appName)
+
+	if p.State == processRunning && proj.GetState(p.Name) {
+		if p.Stop() {
+			proj.SetState(p.Name, false)
+			return p
+		}
+	}
 
 	if p.State == processStopped {
 		p.logger.Infof("%s is stopped.", p.FullName)
@@ -200,14 +227,13 @@ func (sv *Supervisor) Stop(name string) *Process {
 		return p
 	}
 
-	if proj.GetState(p.Name) {
-		if p.Stop() {
-			proj.SetState(p.Name, false)
-			return p
-		}
+	return &Process{
+		Pid:      p.Pid,
+		FullName: p.FullName,
+		StartAt:  p.StartAt,
+		StopAt:   p.StopAt,
+		State:    p.State,
 	}
-
-	return nil
 }
 
 // StopAll 停止项目下所有进程
@@ -241,8 +267,14 @@ func (sv *Supervisor) StopAll(appName string) []*Process {
 			if proj.GetState(name) {
 				return sv.Stop(fullName)
 			}
-			return nil
-		})
+		}
+	} else {
+		pt := sv.procTable.Iter()
+
+		for name := range pt {
+			p := sv.Stop(name)
+			procs = append(procs, p)
+		}
 	}
 
 	// 对于所有项目，直接调用 Stop

@@ -2,6 +2,7 @@
 package supervisor
 
 import (
+	"maps"
 	"sync"
 )
 
@@ -118,13 +119,6 @@ func (pt *ProcTable) Del(name string) bool {
 //
 //	map[string]*Process: 进程名到进程实例的映射
 //
-// 警告：
-//
-//	⚠️  返回的是内部 map 的引用，调用者遍历时应避免修改
-//	⚠️  建议在调用时持有锁，或者返回副本
-//
-// TODO: 应该返回副本而不是引用，避免并发安全问题
-//
 // 示例：
 //
 //	procs := procTable.Iter()
@@ -135,5 +129,7 @@ func (pt *ProcTable) Iter() map[string]*Process {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()
 
-	return pt.table
+	clone := maps.Clone(pt.table)
+
+	return clone
 }

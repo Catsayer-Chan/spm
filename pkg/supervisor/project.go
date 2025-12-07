@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"maps"
 	"os"
 	"regexp"
 	"sync"
@@ -144,5 +145,7 @@ func (pt *ProjectTable) Iter() map[string]*Project {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()
 
-	return pt.table
+	clone := maps.Clone(pt.table)
+
+	return clone
 }

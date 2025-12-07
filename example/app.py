@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import signal
+import sys
 
 import tornado
 import tornado.ioloop
@@ -25,13 +26,11 @@ class MainHandler(tornado.web.RequestHandler):
 def make_app():
     access_log = logging.getLogger("tornado.access")
 
-    console_handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    console_handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('[%(asctime)s] - %(levelname)s - %(message)s')
     console_handler.setFormatter(formatter)
     access_log.addHandler(console_handler)
-
     access_log.setLevel(logging.DEBUG)
-    access_log.propagate = False
 
     return tornado.web.Application([
         (r"/", MainHandler),
