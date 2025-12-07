@@ -3,14 +3,14 @@ appName:
 workDir:
 procfile:
 env:
-    SPM_DAEMONISE: true
+    PATH: /usr/local/bin:$PATH
 
 processes:
     web:
         root:
         pidRoot:
         logRoot:
+        # Supported signal: TERM QUIT INT
         stopSignal: TERM
-        NumProcs
         env:
             PORT: 3000
