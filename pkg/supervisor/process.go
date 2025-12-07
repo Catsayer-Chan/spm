@@ -19,12 +19,15 @@ import (
 	"spm/pkg/logger"
 	"spm/pkg/utils"
 
+	_ "github.com/k0kubun/pp/v3"
 	"go.uber.org/zap"
 )
 
 type ProcessState string
 
 const (
+	processStarted  ProcessState = "Started"
+	processNotfound ProcessState = "NotFound"
 	processUnknown  ProcessState = "Unknown"
 	processStopped  ProcessState = "Stopped"
 	processStopping ProcessState = "Stopping"
@@ -39,6 +42,14 @@ var sigTable = map[string]syscall.Signal{
 	"QUIT":  syscall.SIGQUIT,
 	"STOP":  syscall.SIGSTOP,
 	"ABORT": syscall.SIGABRT,
+}
+
+var notFoundProc = &Process{
+	Pid:      -1,
+	FullName: "",
+	StartAt:  time.Time{},
+	StopAt:   time.Time{},
+	State:    processNotfound,
 }
 
 type Process struct {

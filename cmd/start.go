@@ -65,7 +65,7 @@ func execStartCmd(cmd *cobra.Command, args []string) {
 		}
 
 		for _, proc := range res {
-			fmt.Printf("[%s] Started %s\t[PID %d]\n", time.UnixMilli(proc.StartAt).Format(time.RFC3339), proc.Name, proc.Pid)
+			fmt.Printf("%s %s\t[PID %d] %s\n", time.UnixMilli(proc.StartAt).Format(time.RFC3339), proc.Name, proc.Pid, proc.Status)
 		}
 	}
 
