@@ -62,6 +62,7 @@ func LoadProcfileOption(cwd string, procfile string) (*ProcfileOption, error) {
 	viper.SetDefault("appName", appName)
 	viper.SetDefault("workDir", cwd)
 	viper.SetDefault("procfile", procfile)
+	viper.SetDefault("env", map[string]string{})
 
 	err = viper.ReadInConfig()
 	if err != nil && !errors.As(err, &viper.ConfigFileNotFoundError{}) {
@@ -125,7 +126,11 @@ func LoadProcfileOption(cwd string, procfile string) (*ProcfileOption, error) {
 			opt.StopSignal = "TERM"
 		}
 
-		env := Merge(procOpts.Env, opt.Env)
+		if opt.Env == nil {
+			opt.Env = maps.Clone(procOpts.Env)
+		} else {
+			opt.Env = Merge(procOpts.Env, opt.Env)
+		}
 
 		var args []string
 		if strings.Contains(cmd, `"`) || strings.Contains(cmd, `'`) {
@@ -135,7 +140,6 @@ func LoadProcfileOption(cwd string, procfile string) (*ProcfileOption, error) {
 		}
 
 		opt.cmd = args
-		opt.Env = env
 	}
 
 	return procOpts, nil

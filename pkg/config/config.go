@@ -39,6 +39,7 @@ func setDefault() {
 	viper.SetDefault("daemonize", true)
 	viper.SetDefault("pidfile", constants.DaemonPidFilePath)
 	viper.SetDefault("socket", constants.DaemonSockFilePath)
+	viper.SetDefault("env", map[string]string{})
 	viper.SetDefault("log", map[string]any{
 		"level":        constants.DefaultLogLevel,
 		"filePath":     constants.DaemonLogFilePath,

@@ -18,7 +18,7 @@ var actionResponse = map[ActionCtl]string{
 	ActionRun:     "Run command successfully",
 	ActionStart:   "Start processes successfully",
 	ActionStop:    "Stop processes successfully",
-	ActionStatus:  "Check processes stattus successfully",
+	ActionStatus:  "Check processes status successfully",
 	ActionRestart: "Restart processes successfully",
 }
 
